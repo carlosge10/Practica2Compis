@@ -1,0 +1,145 @@
+
+import java_cup.runtime.*;
+   
+
+parser code {:
+    
+    
+    public void report_error(String message, Object info) {
+   
+        StringBuilder m = new StringBuilder("Error");
+   
+         if (info instanceof java_cup.runtime.Symbol) {
+            
+            java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+   
+             if (s.left >= 0) {                
+                  m.append(" in line "+(s.left+1));   
+               	 
+               	  if (s.right >= 0)                    
+                 	 m.append(", column "+(s.right+1));
+            }
+        }
+   
+        m.append(" : "+message);
+   
+        System.err.println(m);
+    }
+   
+    
+    public void report_fatal_error(String message, Object info) {
+        report_error(message, info);
+        System.exit(1);
+    }
+:};
+   
+
+   
+/* ------------Declaration of Terminals and Non Terminals Section----------- */
+   
+
+terminal           SEMI, PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN, EQ, POW, AND, OR, IMP, DIMP, NEG;
+terminal Integer   NUMBER, ID;
+   
+non terminal Object     expr_list, expr_part;
+non terminal Integer    expr, factor, term;
+  
+
+/* -------------Precedence and Associatively of Terminals Section----------- */
+      
+  precedence left PLUS, MINUS; 
+  precedence left POW, TIMES, DIVIDE, AND, OR, IMP, DIMP, NEG; 
+
+/* ----------------------------Grammar Section-------------------- */
+   
+/*----------------------------------------------   
+   expr_list ::=   expr_list expr_part
+                 | expr_part 
+                 
+   expr_part ::=   ID EQ expr SEMI
+   expr      ::=   expr MINUS factor
+                 | expr PLUUS factor
+                 | factor
+   factor    ::=   factor TIMES term
+                 | factor DIVIDE term
+                 | pow
+   pow		::=	   pow POW term
+   				 |term
+   term     ::=    LPAREN expr RPAREN
+                 | NUMBER
+                 | ID
+
+----------------------------------------------------*/
+   
+   expr_list ::= expr_list expr_part
+                 |
+                 expr_part
+                 ;
+               
+   expr_part ::= ID:i EQ expr:e
+                 {: System.out.println(" = " + e); :}
+                 SEMI
+                 ;
+
+   
+   expr      ::= expr:e PLUS factor:f
+                 {: RESULT = new Integer(e.intValue() + f.intValue()); :}
+                 |
+                 expr:e MINUS factor:f
+                 {: RESULT = new Integer(e.intValue() - f.intValue()); :}
+                 |
+                 factor:f
+                 {: RESULT = new Integer(f.intValue()); :}
+                 ;
+   
+  factor    ::= factor:f TIMES term:t
+                 {: RESULT = new Integer(f.intValue() * t.intValue()); :}
+                 |
+                 factor:f POW term:t
+                 {: RESULT = new Integer((int)Math.pow(f.intValue() , t.intValue())); :}
+                 |
+                 factor:f DIVIDE term:t
+                 {: RESULT = new Integer(f.intValue() / t.intValue()); :}
+                 |
+                 factor:f AND term:t
+                 {: RESULT = new Integer(f.intValue() & t.intValue()); :}
+                 |
+                 factor:f OR term:t
+                 {: RESULT = new Integer(f.intValue() | t.intValue()); :}
+                 |
+                 factor:f IMP term:t
+                 {: 
+                 boolean a = f.intValue()!=0;
+                 boolean b = t.intValue()!=0;
+                 boolean c = !a|b;
+                 RESULT = new Integer((c) ? 1 : 0); 
+                 :}
+                 |
+                 factor:f DIMP term:t
+                 {: 
+                 boolean a = f.intValue()!=0;
+                 boolean b = t.intValue()!=0;
+                 boolean c = (a&b) | (!a&!b);
+                 RESULT = new Integer((c) ? 1 : 0); 
+                 :}
+                 |                 
+                 term:t
+                 {: RESULT = new Integer(t.intValue()); :}
+                 ;
+   
+  term      ::= LPAREN expr:e RPAREN
+                 {: RESULT = e; :}
+                 |
+                 NUMBER:n
+                 {: RESULT = n; :}
+                 |
+                 ID:i
+                 {: RESULT = i; :}
+                 |
+                 NEG term:t
+                 {:
+                 boolean a = t.intValue()==0;
+                 RESULT = new Integer((a)?1:0); :}
+                 ;
+                 
+  
