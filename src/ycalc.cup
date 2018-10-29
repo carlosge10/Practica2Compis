@@ -38,108 +38,106 @@ parser code {:
 /* ------------Declaration of Terminals and Non Terminals Section----------- */
    
 
-terminal           SEMI, PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN, EQ, POW, AND, OR, IMP, DIMP, NEG;
-terminal Integer   NUMBER, ID;
-   
+terminal           SEMI, PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN, EQ, 
+POW, RV, LV, COMA, DOUBLE, VEC, NORM, MAG, DOT, LN, SIN, COS, TAN, SQRT;
+
+terminal Double   NUMBER, PI;
+terminal String ID;
 non terminal Object     expr_list, expr_part;
-non terminal Integer    expr, factor, term;
-  
+non terminal Double    expr, factor, term, power, func, sc;
+non terminal Vector		vector, vfactor, vexpr;  
 
 /* -------------Precedence and Associatively of Terminals Section----------- */
       
   precedence left PLUS, MINUS; 
-  precedence left POW, TIMES, DIVIDE, AND, OR, IMP, DIMP, NEG; 
+  precedence left POW, TIMES, DIVIDE; 
 
 /* ----------------------------Grammar Section-------------------- */
    
 /*----------------------------------------------   
-   expr_list ::=   expr_list expr_part
-                 | expr_part 
-                 
-   expr_part ::=   ID EQ expr SEMI
-   expr      ::=   expr MINUS factor
-                 | expr PLUUS factor
-                 | factor
-   factor    ::=   factor TIMES term
-                 | factor DIVIDE term
-                 | pow
-   pow		::=	   pow POW term
-   				 |term
-   term     ::=    LPAREN expr RPAREN
-                 | NUMBER
-                 | ID
+
+EL -> El EP
+EL -> EP
+EP -> double id ;
+EP -> double id = E ;
+EP -> vec id ;
+EP -> vec id = VE ;
+VE -> VE + VF
+VE -> VE - VF
+VE -> VF
+VF -> V * T
+VF -> V / T
+VF -> V
+V -> < E , E >
+V -> id
+V -> norm ( VE )
+F -> F * P
+F -> F / P
+F -> P
+P -> P ^ T
+P -> FN
+FN -> cos ( E )
+FN -> sin ( E )
+FN -> tan ( E )
+FN -> sqrt ( E )
+FN -> ln ( E )
+FN -> T
+T -> ( E )
+T -> num
+T -> id
+T -> PI
+T -> SC
+SC -> dot ( VE )
+SC -> mag ( VE )
+E -> E + F
+E -> E - F
+E -> F
 
 ----------------------------------------------------*/
-   
    expr_list ::= expr_list expr_part
-                 |
-                 expr_part
+                 | expr_part
                  ;
-               
-   expr_part ::= ID:i EQ expr:e
-                 {: System.out.println(" = " + e); :}
-                 SEMI
+   expr_part ::= DOUBLE ID:i {: Variables.setValue(i, (Double)0.0); System.out.println(" = " + Variables.getValue(i)); :} SEMI
+   				 | DOUBLE ID:i EQ expr:e {: Variables.setValue(i, (Double)(e.doubleValue())); System.out.println(" = " + Variables.getValue(i));  :} SEMI
+   				 | VEC ID:i {: Variables.setVector(i, (Vector) new Vector()); System.out.println(" = " + Variables.getVectorString(i)); :} SEMI
+   				 | VEC ID:i EQ vexpr:ve {: Variables.setVector(i, (Vector) new Vector(ve)); System.out.println(" = " + Variables.getVectorString(i)); :} SEMI 
                  ;
-
-   
-   expr      ::= expr:e PLUS factor:f
-                 {: RESULT = new Integer(e.intValue() + f.intValue()); :}
-                 |
-                 expr:e MINUS factor:f
-                 {: RESULT = new Integer(e.intValue() - f.intValue()); :}
-                 |
-                 factor:f
-                 {: RESULT = new Integer(f.intValue()); :}
+   expr      ::= expr:e PLUS factor:f {: RESULT = new Double(e.doubleValue() + f.doubleValue()); :}
+                 | expr:e MINUS factor:f {: RESULT = new Double(e.doubleValue() - f.doubleValue()); :}
+                 | factor:f {: RESULT = new Double(f.doubleValue()); :}
                  ;
-   
-  factor    ::= factor:f TIMES term:t
-                 {: RESULT = new Integer(f.intValue() * t.intValue()); :}
-                 |
-                 factor:f POW term:t
-                 {: RESULT = new Integer((int)Math.pow(f.intValue() , t.intValue())); :}
-                 |
-                 factor:f DIVIDE term:t
-                 {: RESULT = new Integer(f.intValue() / t.intValue()); :}
-                 |
-                 factor:f AND term:t
-                 {: RESULT = new Integer(f.intValue() & t.intValue()); :}
-                 |
-                 factor:f OR term:t
-                 {: RESULT = new Integer(f.intValue() | t.intValue()); :}
-                 |
-                 factor:f IMP term:t
-                 {: 
-                 boolean a = f.intValue()!=0;
-                 boolean b = t.intValue()!=0;
-                 boolean c = !a|b;
-                 RESULT = new Integer((c) ? 1 : 0); 
-                 :}
-                 |
-                 factor:f DIMP term:t
-                 {: 
-                 boolean a = f.intValue()!=0;
-                 boolean b = t.intValue()!=0;
-                 boolean c = (a&b) | (!a&!b);
-                 RESULT = new Integer((c) ? 1 : 0); 
-                 :}
-                 |                 
-                 term:t
-                 {: RESULT = new Integer(t.intValue()); :}
+  factor    ::= factor:f TIMES power:p {: RESULT = new Double(f.doubleValue() * p.doubleValue()); :}
+                 | factor:f DIVIDE power:p {: RESULT = new Double(f.doubleValue() / p.doubleValue()); :}
+                 | power:p {: RESULT = new Double(p.doubleValue()); :}
                  ;
-   
-  term      ::= LPAREN expr:e RPAREN
-                 {: RESULT = e; :}
-                 |
-                 NUMBER:n
-                 {: RESULT = n; :}
-                 |
-                 ID:i
-                 {: RESULT = i; :}
-                 |
-                 NEG term:t
-                 {:
-                 boolean a = t.intValue()==0;
-                 RESULT = new Integer((a)?1:0); :}
+  power		::= power:p POW term:t {: RESULT = new Double(Math.pow(p.doubleValue() , t.doubleValue())); :}
+  				| term:t {:  RESULT = new Double(t.doubleValue());  :}
+  				;
+  func		::= COS LPAREN expr:e RPAREN {: RESULT = new Double(Math.cos(e.doubleValue())); :}
+  				| SIN LPAREN expr:e RPAREN {: RESULT = new Double(Math.sin(e.doubleValue())); :}
+  				| TAN LPAREN expr:e RPAREN {: RESULT = new Double(Math.tan(e.doubleValue())); :}
+  				| SQRT LPAREN expr:e RPAREN {: RESULT = new Double(Math.sqrt(e.doubleValue())); :}
+  				| LN LPAREN expr:e RPAREN {: RESULT = new Double(Math.log(e.doubleValue())); :}
+  				;
+  term      ::= LPAREN expr:e RPAREN {: RESULT = e; :}
+                 | NUMBER:n {: RESULT = n; :}
+                 | ID:i {: RESULT = (Double)Variables.getValue(i); :}
+                 | PI:p {: RESULT = Math.PI; :}
+                 | sc:s {: RESULT = s;  :}
+                 | func:f {: RESULT = new Double(f.doubleValue());; :}
                  ;
-                 
-  
+  sc      ::= DOT LPAREN vexpr:ve COMA vexpr:ve1 RPAREN {: RESULT = new Double( ((Vector)ve).dot((Vector) ve1) ); :}
+                 | MAG LPAREN vexpr:ve RPAREN {: RESULT = new Double( ((Vector)ve).magnitude() ); :}
+				 ;
+	vexpr ::= vexpr:ve PLUS vfactor:vf {: RESULT = new Vector( ((Vector)ve).sum(vf) ); :}
+				 | vexpr:ve MINUS vfactor:vf {: RESULT = new Vector( ((Vector)ve).substract(vf) ); :}
+				 | vfactor:vf {: RESULT = new Vector( (Vector)vf ); :}
+				 ;
+	vfactor ::= vector:v TIMES term:t {: RESULT = new Vector( ((Vector)v).multiplyByScalar(t.doubleValue())); :}
+				 | vector:v DIVIDE term:t {: RESULT = new Vector( ((Vector)v).divideByScalar(t.doubleValue())); :}
+				 | vector:v {: RESULT = new Vector( ((Vector)v) ); :}
+				 ;
+	vector ::= LV expr:e COMA expr:e1 RV {: RESULT = new Vector(e,e1); :}
+				 | LV ID:i RV {: RESULT = (Vector)(Variables.getValue(i));  :}
+				 | NORM LPAREN vexpr:ve RPAREN {: RESULT = new Vector( ((Vector)ve).normalize() ); :}
+				 ;

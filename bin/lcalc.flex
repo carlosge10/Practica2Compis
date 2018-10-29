@@ -12,11 +12,13 @@ import java_cup.runtime.*;
 
 %{   
     
-    private Symbol symbol(double type) {
+    private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
     }
     
-    private Symbol symbol(double type, Object value) {	  
+    private Symbol symbol(int type, Object value) {	  
+    	if (type == sym.ID)
+    		Variables.initializeVariable((String)value);
     	return new Symbol(type, yyline, yycolumn, value);
     }
     
@@ -25,9 +27,9 @@ import java_cup.runtime.*;
 LineTerminator = \r|\n|\r\n
 WhiteSpace     = {LineTerminator} | [ \t\f]
 
-dec_double_lit = (-)?(0|[1-9][0-9]*(.[0-9][0-9]*)?)
+dec_int_lit = 0 | [0-9][0-9]*[.0-9]*
 dec_int_id = [A-Za-z_][A-Za-z_0-9]*
-vec_lit = <-?[0-9]*((.)?[0-9]*),-?[0-9]*((.)?[0-9]*)>
+
 PI = PI
 NORM = norm
 MAG = magnitude
@@ -55,16 +57,9 @@ SQRT = sqrt
     ">"                { System.out.print(" > "); return symbol(sym.RV); }
     "<"                { System.out.print(" < "); return symbol(sym.LV); }
     ","                { System.out.print(" , "); return symbol(sym.COMA); }
+    "Double"           { System.out.print(" Double "); return symbol(sym.DOUBLE); }
+    "Vec2D"            { System.out.print(" Vec2D "); return symbol(sym.VEC); }
    
-    {dec_int_lit}      { System.out.print(yytext());
-                         return symbol(sym.NUMBER, new Integer(yytext())); }
-
-    {vec_int_lit}      { System.out.print(yytext());
-                         return symbol(sym.VEC, new Integer(yytext())); }
-
-   
-    {dec_int_id}       { System.out.print(yytext());
-                         return symbol(sym.ID, new Double(1));}
 	{PI}			  { System.out.print(yytext());
                          return symbol(sym.PI, Math.PI); }
 	{NORM}		  { System.out.print(yytext());
@@ -83,6 +78,11 @@ SQRT = sqrt
                          return symbol(sym.TAN); }
 	{SQRT}		  { System.out.print(yytext());
                          return symbol(sym.SQRT); }
+
+    {dec_int_lit}      { System.out.print(yytext());
+                         return symbol(sym.NUMBER, new Double(yytext())); }
+    {dec_int_id}       { System.out.print(yytext());
+                         return symbol(sym.ID, yytext());}
    
     {WhiteSpace}       { /* do nothing */ }   
 }
