@@ -75,18 +75,18 @@ F -> F * P
 F -> F / P
 F -> P
 P -> P ^ T
-P -> FN
+P -> T
 FN -> cos ( E )
 FN -> sin ( E )
 FN -> tan ( E )
 FN -> sqrt ( E )
 FN -> ln ( E )
-FN -> T
 T -> ( E )
 T -> num
 T -> id
 T -> PI
 T -> SC
+T -> FN
 SC -> dot ( VE )
 SC -> mag ( VE )
 E -> E + F
